@@ -5,7 +5,8 @@
 #include "net/netstack.h"
 #include "net/nullnet/nullnet.h"
 
-#define LED_TIMEOUT CLOCK_SECOND
+//#define LED_TIMEOUT CLOCK_SECOND // for debuging
+#define LED_TIMEOUT CLOCK_SECOND*10
 
 /* Declare our "main" process, the basestation_process */
 PROCESS(basestation_process, "Shaker basestation");
@@ -17,9 +18,6 @@ AUTOSTART_PROCESSES(&basestation_process, &led_process);
 
 static struct etimer led_timeout_timer;
 
-/* Holds the number of packets received. */
-static int count = 0;
-
 /* Callback function for received packets.
  *
  * Whenever this node receives a packet for its broadcast handle,
@@ -29,9 +27,6 @@ static int count = 0;
  */
 static void recv(const void *data, uint16_t len,
   const linkaddr_t *src, const linkaddr_t *dest) {
-    count++;
-    /* 0bxxxxx allows us to write binary values */
-    /* for example, 0b10 is 2 */
     
     leds_on(LEDS_ALL);
     process_poll(&led_process);    
@@ -40,10 +35,10 @@ static void recv(const void *data, uint16_t len,
 PROCESS_THREAD(led_process, ev, data) {
 	PROCESS_BEGIN();
 	while(1) {
-		PROCESS_YIELD_UNTIL(ev == PROCESS_EVENT_POLL);
-		etimer_set(&led_timeout_timer, LED_TIMEOUT);
-		PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&led_timeout_timer));
- 		leds_off(LEDS_ALL);
+		PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&led_timeout_timer) || 
+			ev == PROCESS_EVENT_POLL);
+		if(ev == PROCESS_EVENT_POLL) etimer_set(&led_timeout_timer, LED_TIMEOUT);
+		else leds_off(LEDS_ALL);
 	}
 	PROCESS_END();
 }

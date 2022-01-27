@@ -67,7 +67,7 @@ PROCESS_THREAD(client_process, ev, data) {
 		x = accm_read_axis(X_AXIS);
 
 		if(abs(x - oldx) > threshold) {
-			leds_toggle(LEDS_RED);
+			leds_blink();
 			
 			/* Copy the string "hej" into the packet buffer. */
 			memcpy(nullnet_buf, &payload, sizeof(payload));
